@@ -48,6 +48,15 @@ class Task(luigi.Task):
         :param prerequisites: a list of prerequisite tasks that must complete before this one can begin
         """
         super().__init__()
+        # If no requirements were applied to the class with the decorators...
+        if not hasattr(self.__class__, '_prqs'):
+            # ...apply it now.
+            self.__class__._prqs = None
+
+        # Keep a reference to the original 'run' method.
+        self._run_method = self.run
+        # The 'run' method (as far as outsiders are concerned) is now the 'supervised run' method.
+        self.run = self._run_supervised
 
     def requires(self):
         """
@@ -56,8 +65,20 @@ class Task(luigi.Task):
         """
         return self._prqs
 
+    def _run_supervised(self):
+        """
+        This method supervises and calls the original run() method defined for the class.
+        :return:
+        """
+        print('READY')
+        self._run_method()
+        print('DONE')
+
     @abstractmethod
     def run(self):
+        """
+        Override this method to implement the task logic.
+        """
         pass
 
 
