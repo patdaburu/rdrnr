@@ -37,30 +37,24 @@ def requires(prqs: luigi.Task or List[luigi.Task] or type):
     return add_require
 
 
-class Task(luigi.Task):
+class TaskMixin(object):
     """
-    Extend this class to define a chunk of logic that should be executed as a single task.
+    This mixin provides common functionality for tasks.
     """
-    __metaclass__ = ABCMeta
-
     def __init__(self):
-        """
-        :param prerequisites: a list of prerequisite tasks that must complete before this one can begin
-        """
         super().__init__()
-        # If no requirements were applied to the class with the decorators...
-        if not hasattr(self.__class__, '_prqs'):
-            # ...apply it now.
-            self.__class__._prqs = None
-
+        # If prerequisites were defined by a decorator...
+        if hasattr(self.__class__, '_prqs'):
+            # ...replace the class' requires() method.
+            self.requires = self._get_prqs
         # Keep a reference to the original 'run' method.
         self._run_method = self.run
         # The 'run' method (as far as outsiders are concerned) is now the 'supervised run' method.
         self.run = self._run_supervised
 
-    def requires(self):
+    def _get_prqs(self):
         """
-        This is the method called by Luigi to retrieve the task prerequisites.
+        Get the list of prerequisite tasks.
         :return: the list of prerequisite tasks
         """
         return self._prqs
@@ -74,11 +68,15 @@ class Task(luigi.Task):
         self._run_method()
         print('DONE')
 
-    @abstractmethod
-    def run(self):
-        """
-        Override this method to implement the task logic.
-        """
-        pass
+
+class Task(luigi.Task, TaskMixin):
+    """
+    Extend this class to define a chunk of logic that should be executed as a standard task.
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
+        luigi.Task.__init__(self)
+        TaskMixin.__init__(self)
 
 

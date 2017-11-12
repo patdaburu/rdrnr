@@ -8,5 +8,5 @@
 This is the place to be if your tasks are centered around PostGIS.
 """
 
-from .environment import PostgisEnvironment
+from .environment import PgEnvironment
 
